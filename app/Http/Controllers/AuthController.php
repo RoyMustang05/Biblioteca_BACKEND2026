@@ -17,6 +17,8 @@ class AuthController extends Controller
                 'access_token' => $token->plainTextToken,
                 'token_type' => 'Bearer',
                 'user' => Auth::user(),
+                'roles' => $user->getRoleNames()->values(),
+                'permissions' => $user->getAllPermissions()->pluck('name')->values(),
             ]);
         }
 
@@ -39,6 +41,8 @@ class AuthController extends Controller
     {
         return response()->json([
             'user' => Auth::user(),
+            'roles' => $request->user()->getRoleNames()->values(),
+            'permissions' => $request->user()->getAllPermissions()->pluck('name')->values(),
         ]);
     }
 }

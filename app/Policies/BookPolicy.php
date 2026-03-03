@@ -7,12 +7,22 @@ use App\Models\User;
 
 class BookPolicy
 {
+    private function canRead(User $user, string $permission): bool
+    {
+        return $user->hasLibraryRole() && $user->can($permission);
+    }
+
+    private function canManage(User $user, string $permission): bool
+    {
+        return $user->isBibliotecario() && $user->can($permission);
+    }
+
     /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return true;
+        return $this->canRead($user, 'books.viewAny');
     }
 
     /**
@@ -20,7 +30,7 @@ class BookPolicy
      */
     public function view(User $user, Book $book): bool
     {
-        return true;
+        return $this->canRead($user, 'books.view');
     }
 
     /**
@@ -28,7 +38,7 @@ class BookPolicy
      */
     public function create(User $user): bool
     {
-        return true;
+        return $this->canManage($user, 'books.create');
     }
 
     /**
@@ -36,7 +46,7 @@ class BookPolicy
      */
     public function update(User $user, Book $book): bool
     {
-        return true;
+        return $this->canManage($user, 'books.update');
     }
 
     /**
@@ -44,7 +54,7 @@ class BookPolicy
      */
     public function delete(User $user, Book $book): bool
     {
-        return true;
+        return $this->canManage($user, 'books.delete');
     }
 
     /**
@@ -52,7 +62,7 @@ class BookPolicy
      */
     public function restore(User $user, Book $book): bool
     {
-        return true;
+        return $this->canManage($user, 'books.restore');
     }
 
     /**
@@ -60,6 +70,6 @@ class BookPolicy
      */
     public function forceDelete(User $user, Book $book): bool
     {
-        return true;
+        return $this->canManage($user, 'books.forceDelete');
     }
 }
