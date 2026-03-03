@@ -15,6 +15,11 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
 
     // Books
     Route::get('books', [BookController::class, 'index']); // Listar libros
+    Route::get('books/{book}', [BookController::class, 'show']); // Mostrar detalle de libro
+    Route::post('books', [BookController::class, 'store']); // Crear libro
+    Route::put('books/{book}', [BookController::class, 'update']); // Actualizacion completa de libro
+    Route::patch('books/{book}', [BookController::class, 'partialUpdate']); // Edicion parcial de libro
+    Route::delete('books/{book}', [BookController::class, 'destroy']); // Eliminar libro
 
     Route::get('loans', [LoanController::class, 'index']); // Listar presatamos 
 
