@@ -16,8 +16,7 @@ class LoanController extends Controller
     public function index()
     {
         $loans = Loan::with('book')->paginate();
-
-        return response()->json(LoanResource::collection($loans));
+        return response()->json(['data' => LoanResource::collection($loans)]);
     }
 
     /**
