@@ -102,6 +102,13 @@ class BookController extends Controller
     {
         $this->authorize('delete', $book);
 
+        // Verificar si hay préstamos activos
+        if ($book->loans()->whereNull('return_at')->exists()) {
+            return response()->json([
+                'message' => 'Cannot delete book with active loans',
+            ], 422);
+        }
+
         $book->delete();
 
         return response()->json([

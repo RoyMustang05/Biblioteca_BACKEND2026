@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Book;
+use App\Models\Loan;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -154,4 +155,87 @@ test('bibliotecario puede eliminar libro', function () {
         ->assertJsonPath('message', 'Book deleted successfully');
 
     $this->assertDatabaseMissing('books', ['id' => $book->id]);
+});
+
+// ============================================================
+// TESTS ADICIONALES SEGUN MATRIZ DE REQUISITOS
+// ============================================================
+
+test('listar libros retorna lista vacia cuando no hay libros', function () {
+    autenticarComo(User::ROLE_DOCENTE);
+
+    $response = $this->getJson('/api/v1/books');
+
+    $response->assertOk()
+        ->assertJson([]);
+});
+
+test('listar libros respeta la paginacion', function () {
+    autenticarComo(User::ROLE_ESTUDIANTE);
+    Book::factory()->count(20)->create();
+
+    $response = $this->getJson('/api/v1/books');
+
+    $response->assertOk();
+    
+    // Laravel pagina por defecto en 15 items por página
+    expect($response->json())->toHaveCount(15);
+});
+
+test('detalle de libro inexistente retorna 404', function () {
+    autenticarComo(User::ROLE_DOCENTE);
+
+    $response = $this->getJson('/api/v1/books/99999');
+
+    $response->assertNotFound();
+});
+
+test('bibliotecario puede actualizar libro parcialmente con PATCH', function () {
+    autenticarComo(User::ROLE_BIBLIOTECARIO);
+    $book = Book::factory()->create([
+        'title' => 'Titulo original',
+        'description' => 'Descripcion original',
+        'ISBN' => '1234567890123',
+        'total_copies' => 5,
+        'available_copies' => 3,
+    ]);
+
+    // Solo actualizamos el título
+    $response = $this->patchJson("/api/v1/books/{$book->id}", [
+        'title' => 'Titulo parcialmente actualizado',
+    ]);
+
+    $response->assertOk()
+        ->assertJsonPath('title', 'Titulo parcialmente actualizado')
+        ->assertJsonPath('description', 'Descripcion original')
+        ->assertJsonPath('ISBN', '1234567890123');
+
+    $this->assertDatabaseHas('books', [
+        'id' => $book->id,
+        'title' => 'Titulo parcialmente actualizado',
+        'description' => 'Descripcion original',
+        'ISBN' => '1234567890123',
+    ]);
+});
+
+test('no se puede eliminar libro con prestamos activos', function () {
+    autenticarComo(User::ROLE_BIBLIOTECARIO);
+    $book = Book::factory()->create();
+    
+    // Crear un préstamo activo (sin return_at)
+    $book->loans()->create([
+        'requester_name' => 'Juan Perez',
+        'return_at' => null,
+    ]);
+
+    $response = $this->deleteJson("/api/v1/books/{$book->id}");
+
+    $response->assertUnprocessable()
+        ->assertJsonPath('message', 'Cannot delete book with active loans');
+
+    // El libro debería seguir existiendo
+    $this->assertDatabaseHas('books', ['id' => $book->id]);
+    
+    // Verificar que el préstamo activo existe
+    expect($book->loans()->whereNull('return_at')->count())->toBe(1);
 });
