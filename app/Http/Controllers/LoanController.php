@@ -15,7 +15,11 @@ class LoanController extends Controller
      */
     public function index()
     {
-        $loans = Loan::with('book')->paginate();
+        $query = Loan::with('book');
+        if (request()->has('user_id')) {
+            $query->where('user_id', request('user_id'));
+        }
+        $loans = $query->paginate();
         return response()->json(['data' => LoanResource::collection($loans)]);
     }
 
@@ -33,6 +37,7 @@ class LoanController extends Controller
         $loan = Loan::create([
             'requester_name' => $request->input('requester_name'),
             'book_id' => $request->input('book_id'),
+            'user_id' => auth()->id(),
         ]);
 
         $book->update([

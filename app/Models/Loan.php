@@ -13,8 +13,13 @@ class Loan extends Model
     protected $fillable = [
         'requester_name',
         'book_id',
+        'user_id',
         'return_at',
     ];
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function isActive(): Attribute
     {

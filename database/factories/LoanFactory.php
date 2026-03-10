@@ -19,6 +19,7 @@ class LoanFactory extends Factory
         return [
             'requester_name' => $this->faker->name(),
             'book_id' => \App\Models\Book::factory(),
+            'user_id' => \App\Models\User::factory(),
             'return_at' => null,
         ];
     }

@@ -64,10 +64,23 @@ describe('Préstamos', function () {
         $user = \App\Models\User::factory()->create();
         $this->actingAs($user);
         $book = Book::factory()->create();
-        Loan::factory()->count(3)->create(['book_id' => $book->id, 'requester_name' => 'Juan']);
+        Loan::factory()->count(3)->create(['book_id' => $book->id, 'requester_name' => 'Juan', 'user_id' => $user->id]);
         $response = $this->getJson('/api/v1/loans');
         $response->assertStatus(200);
         $response->assertJsonStructure(['data']);
         expect($response->json('data'))->toHaveCount(3);
+    });
+
+    it('filtra préstamos por user_id específico', function () {
+        $user1 = \App\Models\User::factory()->create();
+        $user2 = \App\Models\User::factory()->create();
+        $book = Book::factory()->create();
+        Loan::factory()->count(2)->create(['book_id' => $book->id, 'user_id' => $user1->id]);
+        Loan::factory()->count(1)->create(['book_id' => $book->id, 'user_id' => $user2->id]);
+        $this->actingAs($user1);
+        $response = $this->getJson('/api/v1/loans?user_id=' . $user1->id);
+        $response->assertStatus(200);
+        $response->assertJsonStructure(['data']);
+        expect($response->json('data'))->toHaveCount(2);
     });
 });
