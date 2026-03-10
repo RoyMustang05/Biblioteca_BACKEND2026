@@ -1,4 +1,3 @@
-
 <?php
 
 use App\Models\Book;
@@ -8,6 +7,42 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 describe('Préstamos', function () {
+    it('no puede prestar un libro si el usuario no está autenticado', function () {
+        $book = Book::factory()->create(['available_copies' => 2, 'is_available' => true]);
+        $payload = [
+            'requester_name' => 'Juan',
+            'book_id' => $book->id,
+        ];
+        $response = $this->postJson('/api/v1/loans', $payload);
+        $response->assertStatus(401);
+    });
+
+    it('no puede prestar un libro si falta requester_name', function () {
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user);
+        $book = Book::factory()->create(['available_copies' => 2, 'is_available' => true]);
+        $payload = [
+            'book_id' => $book->id,
+        ];
+        $response = $this->postJson('/api/v1/loans', $payload);
+        $response->assertStatus(422);
+    });
+
+    it('no puede devolver un préstamo inexistente', function () {
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user);
+        $response = $this->postJson('/api/v1/loans/99999/return');
+        $response->assertStatus(404);
+    });
+
+    it('historial vacío si usuario no tiene préstamos', function () {
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user);
+        $response = $this->getJson('/api/v1/loans?user_id=' . $user->id);
+        $response->assertStatus(200);
+        expect($response->json('data'))->toHaveCount(0);
+    });
+
     it('puede prestar un libro disponible', function () {
         $user = \App\Models\User::factory()->create();
         $this->actingAs($user);
